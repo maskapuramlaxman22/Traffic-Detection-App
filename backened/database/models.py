@@ -263,8 +263,9 @@ class DatabaseManager:
             conn.close()
     
     def log_search(self, search_type: str, query: str = None, source: str = None,
-                  destination: str = None, result_status: str = 'success') -> bool:
-        """Log search history"""
+                  destination: str = None, result_status: str = 'success',
+                  traffic_status: str = 'Moderate Traffic') -> bool:
+        """Log search history with traffic status"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
@@ -273,7 +274,7 @@ class DatabaseManager:
                 INSERT INTO search_history
                 (search_type, query, source, destination, result_status, timestamp)
                 VALUES (?, ?, ?, ?, ?, ?)
-            ''', (search_type, query, source, destination, result_status, datetime.now()))
+            ''', (search_type, query, source, destination, traffic_status, datetime.now()))
             
             conn.commit()
             return True
@@ -297,5 +298,66 @@ class DatabaseManager:
             ''', (location_name, hours))
             
             return cursor.fetchall()
+        finally:
+            conn.close()
+    
+    def get_recent_searches(self, limit: int = 100, hours: int = 24) -> list:
+        """Get recent search history"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        try:
+            cursor.execute('''
+                SELECT search_type, query, source, destination, result_status, timestamp
+                FROM search_history
+                WHERE timestamp > datetime('now', '-' || ? || ' hours')
+                ORDER BY timestamp DESC
+                LIMIT ?
+            ''', (hours, limit))
+            
+            results = cursor.fetchall()
+            return [
+                {
+                    "type": "route" if row[0] == "route_search" else "single",
+                    "location": row[1],
+                    "source": row[2],
+                    "destination": row[3],
+                    "traffic_status": "Unknown",
+                    "timestamp": row[5]
+                }
+                for row in results
+            ] if results else []
+        except Exception as e:
+            print(f"Error getting recent searches: {e}")
+            return []
+        finally:
+            conn.close()
+
+    def get_search_history(self, limit: int = 20) -> list:
+        """Alias used by api_handler — returns recent searches formatted for frontend"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        try:
+            cursor.execute('''
+                SELECT search_type, query, source, destination, result_status, timestamp
+                FROM search_history
+                ORDER BY timestamp DESC
+                LIMIT ?
+            ''', (limit,))
+            rows = cursor.fetchall()
+            return [
+                {
+                    "type": "route" if (row[0] or '').lower() in ('route', 'route_search') else "single",
+                    "location": row[1] or '',
+                    "source": row[2] or '',
+                    "destination": row[3] or '',
+                    "traffic_status": row[4] or 'Moderate Traffic',
+                    "timestamp": row[5]
+                }
+                for row in rows
+            ]
+        except Exception as e:
+            print(f"Error in get_search_history: {e}")
+            return []
         finally:
             conn.close()

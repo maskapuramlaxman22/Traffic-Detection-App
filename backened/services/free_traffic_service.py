@@ -90,15 +90,39 @@ class FreeRoutingService:
             if data.get('code') == 'Ok' and data.get('routes'):
                 route = data['routes'][0]
                 
-                # Calculate estimated travel time
-                duration_seconds = route.get('duration', 0)
-                distance_meters = route.get('distance', 0)
+                # Extract intermediate nodes (major waypoints) from steps
+                steps = route.get('legs', [{}])[0].get('steps', [])
+                nodes = []
+                
+                # Always add origin if not empty
+                if steps:
+                    nodes.append({
+                        "name": steps[0].get('name', 'Start'),
+                        "latitude": steps[0].get('maneuver', {}).get('location', [0,0])[1],
+                        "longitude": steps[0].get('maneuver', {}).get('location', [0,0])[0],
+                        "instruction": steps[0].get('maneuver', {}).get('instruction', '')
+                    })
+                
+                # Pick a few intermediate steps (e.g., every 3rd step)
+                for i in range(1, len(steps) - 1):
+                    if i % max(1, len(steps) // 4) == 0:
+                        step = steps[i]
+                        location = step.get('maneuver', {}).get('location', [0, 0])
+                        nodes.append({
+                            "name": step.get('name') or f"Waypoint {len(nodes)}",
+                            "latitude": location[1],
+                            "longitude": location[0],
+                            "instruction": step.get('maneuver', {}).get('instruction', '')
+                        })
+                
+                # The aggregator will add the destination
                 
                 return {
                     "distance_km": distance_meters / 1000,
                     "duration_minutes": duration_seconds / 60,
                     "route_geometry": route.get('geometry'),
-                    "steps": route.get('legs', [{}])[0].get('steps', []),
+                    "nodes": nodes,
+                    "steps": steps,
                     "api_source": "OSRM (Free/Open Source)",
                     "last_updated": datetime.utcnow().isoformat()
                 }
@@ -399,17 +423,49 @@ class FreeTrafficDataAggregator:
             source_lat, source_lng = source_geo['latitude'], source_geo['longitude']
             dest_lat, dest_lng = dest_geo['latitude'], dest_geo['longitude']
             
-            # Step 2: Get route using OSRM (FREE)
+            # Step 3: Get route using OSRM (FREE)
             route_data = self.routing.get_route(source_lat, source_lng, dest_lat, dest_lng)
             
             if not route_data:
+                # Fallback to OpenRouteService (requires registration, but we use a public endpoint if available)
+                # For this demo, let's stick with OSRM and just return None if it fails
                 return None
             
-            # Step 3: Get weather for origin (FREE)
+            # Step 4: Get weather for origin (FREE)
             weather_data = self.weather.get_weather(source_lat, source_lng)
             weather_impact = weather_data.get('traffic_impact', 'none') if weather_data else 'none'
             
-            # Step 4: Estimate traffic impact on route
+            # Step 5: Estimate traffic levels for each node
+            nodes = route_data.get('nodes', [])
+            
+            # Ensure destination is the last node
+            nodes.append({
+                "name": destination,
+                "latitude": dest_lat,
+                "longitude": dest_lng,
+                "instruction": "Arrive at destination"
+            })
+            
+            # Base congestion logic - randomized for demo but influenced by weather
+            traffic_levels = ['Low', 'Medium', 'High']
+            traffic_colors = {'Low': 'green', 'Medium': 'yellow', 'High': 'red'}
+            
+            enriched_nodes = []
+            for node in nodes:
+                # Basic randomness + weather impact
+                import random
+                prob = [0.7, 0.2, 0.1] # Default: mostly low
+                if weather_impact == 'moderate':
+                    prob = [0.4, 0.4, 0.2]
+                elif weather_impact in ['heavy', 'severe']:
+                    prob = [0.2, 0.3, 0.5]
+                
+                level = random.choices(traffic_levels, weights=prob)[0]
+                node['traffic_level'] = level
+                node['traffic_color'] = traffic_colors[level]
+                enriched_nodes.append(node)
+            
+            # Step 6: Final result
             base_duration = route_data.get('duration_minutes', 0)
             
             # Apply weather impact
@@ -427,17 +483,17 @@ class FreeTrafficDataAggregator:
             return {
                 "source": source,
                 "destination": destination,
-                "distance_km": route_data.get('distance_km'),
+                "distance_km": round(route_data.get('distance_km', 0), 2),
                 "normal_duration_minutes": round(base_duration, 1),
                 "traffic_duration_minutes": round(traffic_duration, 1),
                 "delay_minutes": round(delay, 1),
                 "weather_impact": weather_data if weather_data else None,
+                "nodes": enriched_nodes,
                 "data_sources": {
                     "routing": "OSRM (FREE/Open Source)",
                     "weather": "Open-Meteo (FREE)",
                     "traffic_prediction": "Simulated (LOCAL)"
                 },
-                "note": "Route timing based on OSRM + weather simulation",
                 "last_updated": datetime.utcnow().isoformat()
             }
         

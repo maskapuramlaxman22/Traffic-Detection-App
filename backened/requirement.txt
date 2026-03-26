@@ -1,8 +1,11 @@
 # Web Framework
-Flask==2.3.0
+Flask==2.3.3
 flask-cors==4.0.0
-Flask-SocketIO==5.3.4
-python-socketio==5.9.0
+Flask-SocketIO==5.3.5
+python-socketio==5.10.0
+python-engineio==4.8.0
+gevent==23.9.1
+gevent-websocket==0.10.1
 
 # Database
 sqlalchemy==2.0.20
@@ -20,15 +23,22 @@ requests==2.31.0
 # Geocoding & Maps (FREE APIs)
 geopy==2.3.0  # For Nominatim (OpenStreetMap) - COMPLETELY FREE
 
-# Real-time & WebSocket
-python-engineio==4.7.1
-
 # Environment & Config
 python-dotenv==1.0.0
 
 # Utilities
 pydantic==2.0.3
 python-dateutil==2.8.2
+
+# Audio Processing (NEW - For Producer-Consumer Audio ML)
+pyaudio==0.2.13
+librosa==0.10.0
+soundfile==0.12.1
+scipy==1.11.0
+
+# Machine Learning (Optional - for trained models)
+# tensorflow==2.13.0
+# keras==2.13.0
 
 # ============================================================
 # NOTE: No paid API libraries needed!
@@ -39,4 +49,9 @@ python-dateutil==2.8.2
 # - Open-Meteo - Weather - COMPLETELY FREE (no key needed!)
 # - OpenStreetMap Overpass - Incidents - COMPLETELY FREE
 # - Leaflet - Maps - COMPLETELY FREE
+#
+# NEW: Audio-based Traffic Detection
+# - PyAudio - Microphone input
+# - Librosa - Audio feature extraction
+# - SciPy - Signal processing
 # ============================================================

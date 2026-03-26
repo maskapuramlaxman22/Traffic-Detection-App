@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getHistory } from '../services/api';
+import { getTrafficHistory } from '../services/api';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -26,15 +26,16 @@ const History = ({ refreshTrigger }) => {
   const [history, setHistory] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     fetchHistory();
   }, [refreshTrigger]);
 
   const fetchHistory = async () => {
-    const data = await getHistory();
+    const data = await getTrafficHistory(undefined, 24);
     setHistory(data.history || []);
-    setTotalCount(data.total || 0);
+    setTotalCount(data.total || data.count || (data.history || []).length);
     setLoading(false);
   };
 
@@ -47,6 +48,10 @@ const History = ({ refreshTrigger }) => {
     });
     return counts;
   };
+
+  // Display only last 5 by default, or all if "View All" is clicked
+  const displayedHistory = showAll ? history : history.slice(0, 5);
+  const itemsToShow = showAll ? 15 : 5;
 
   const chartData = {
     labels: history.slice(0, 10).reverse().map(item => 
@@ -100,7 +105,7 @@ const History = ({ refreshTrigger }) => {
 
   return (
     <div className="card">
-      <h3 className="card-title">Search History</h3>
+      <h3 className="card-title">📊 Search History</h3>
       
       <div className="grid-2">
         <div>
@@ -118,35 +123,81 @@ const History = ({ refreshTrigger }) => {
         </div>
       </div>
       
-      <div style={{ marginTop: '20px', overflowX: 'auto' }}>
+      <div style={{ marginTop: '30px', overflowX: 'auto' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+          <h4 style={{ margin: 0 }}>Recent Searches ({displayedHistory.length} of {totalCount})</h4>
+          {!showAll && history.length > 5 && (
+            <button
+              onClick={() => setShowAll(true)}
+              style={{
+                background: '#007bff',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}
+            >
+              View All ({totalCount})
+            </button>
+          )}
+          {showAll && (
+            <button
+              onClick={() => setShowAll(false)}
+              style={{
+                background: '#6c757d',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '4px',
+                padding: '8px 16px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: '500'
+              }}
+            >
+              Show Less
+            </button>
+          )}
+        </div>
+
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: '#f5f5f5' }}>
-              <th style={{ padding: '10px', border: '1px solid #ddd' }}>Type</th>
-              <th style={{ padding: '10px', border: '1px solid #ddd' }}>Location</th>
-              <th style={{ padding: '10px', border: '1px solid #ddd' }}>Status</th>
-              <th style={{ padding: '10px', border: '1px solid #ddd' }}>Time</th>
+              <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>Type</th>
+              <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>Location</th>
+              <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>Status</th>
+              <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>Time</th>
             </tr>
           </thead>
           <tbody>
-            {history.map((item, idx) => (
-              <tr key={idx}>
-                <td style={{ padding: '8px', border: '1px solid #ddd' }}>
-                  {item.type === 'single' ? '📍 Single' : '🗺️ Route'}
-                </td>
-                <td style={{ padding: '8px', border: '1px solid #ddd' }}>
-                  {item.location || `${item.source} → ${item.destination}`}
-                </td>
-                <td style={{ padding: '8px', border: '1px solid #ddd' }}>
-                  <span className={`traffic-${item.traffic_status.toLowerCase().split(' ')[0]}`}>
-                    {item.traffic_status}
-                  </span>
-                </td>
-                <td style={{ padding: '8px', border: '1px solid #ddd' }}>
-                  {new Date(item.timestamp).toLocaleString()}
+            {displayedHistory.length > 0 ? (
+              displayedHistory.map((item, idx) => (
+                <tr key={idx}>
+                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                    {item.type === 'single' ? '📍 Single' : '🗺️ Route'}
+                  </td>
+                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                    {item.location || `${item.source} → ${item.destination}`}
+                  </td>
+                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                    <span className={`traffic-${(item.traffic_status || 'moderate').toLowerCase().split(' ')[0]}`}>
+                      {item.traffic_status || 'Moderate Traffic'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '10px', border: '1px solid #ddd', fontSize: '0.9em', color: '#666' }}>
+                    {new Date(item.timestamp).toLocaleString()}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4" style={{ padding: '20px', textAlign: 'center', color: '#999' }}>
+                  No search history yet. Start by searching for a location or route!
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

@@ -1,7 +1,17 @@
 import axios from 'axios';
 import io from 'socket.io-client';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+// Get API URL - try env var first, fallback to localhost
+const getAPIBaseURL = () => {
+  if (process.env.REACT_APP_API_URL) {
+    return process.env.REACT_APP_API_URL;
+  }
+  // For production/serve, always use localhost:5000
+  return 'http://localhost:5000';
+};
+
+const API_BASE_URL = getAPIBaseURL();
+console.log('API Base URL:', API_BASE_URL);
 
 // Initialize HTTP client
 const api = axios.create({
@@ -11,6 +21,19 @@ const api = axios.create({
   },
   timeout: 30000,
 });
+
+// Add response interceptor to handle errors
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response && error.response.status >= 400) {
+      console.error(`API Error [${error.response.status}]:`, error.response.data);
+    } else if (error.message === 'Network Error' || !error.response) {
+      console.error('Network Error - Backend may not be running on ' + API_BASE_URL);
+    }
+    return Promise.reject(error);
+  }
+);
 
 // Initialize WebSocket connection for real-time updates
 let socket = null;
@@ -60,7 +83,7 @@ export const searchLocations = async (query) => {
     const response = await api.get('/api/v1/search_locations', {
       params: { q: query }
     });
-    return response.data;
+    return Array.isArray(response.data) ? response.data : [];
   } catch (error) {
     console.error('Error searching locations:', error);
     return [];
@@ -73,10 +96,10 @@ export const getTrafficStatus = async (location) => {
     const response = await api.get('/api/v1/traffic/current', {
       params: { location }
     });
-    return response.data;
+    return response.data || { traffic_status: 'Unknown', congestion_level: 0 };
   } catch (error) {
     console.error('Error fetching traffic status:', error);
-    throw error;
+    return { traffic_status: 'Unknown', congestion_level: 0 };
   }
 };
 
@@ -85,24 +108,24 @@ export const getTrafficByCoordinates = async (lat, lng) => {
     const response = await api.get('/api/v1/traffic/current', {
       params: { lat, lng }
     });
-    return response.data;
+    return response.data || { traffic_status: 'Unknown', congestion_level: 0 };
   } catch (error) {
     console.error('Error fetching traffic by coordinates:', error);
-    throw error;
+    return { traffic_status: 'Unknown', congestion_level: 0 };
   }
 };
 
 // Get Route Traffic
-export const getRouteTraffic = async (source, destination) => {
+export const getRouteTraffic = async (origin, destination) => {
   try {
-    const response = await api.post('/api/v1/traffic/route', {
-      source,
+    const response = await api.post('/api/v1/route', {
+      origin,
       destination
     });
     return response.data;
   } catch (error) {
     console.error('Error getting route traffic:', error);
-    throw error;
+    return null;
   }
 };
 
@@ -116,7 +139,7 @@ export const getIncidents = async (lat, lng, radiusKm = 5) => {
         radius_km: radiusKm
       }
     });
-    return response.data;
+    return response.data || { incidents: [], count: 0 };
   } catch (error) {
     console.error('Error fetching incidents:', error);
     return { incidents: [], count: 0 };
@@ -127,12 +150,12 @@ export const getIncidents = async (lat, lng, radiusKm = 5) => {
 export const getTrafficHistory = async (location, hours = 24) => {
   try {
     const response = await api.get('/api/v1/traffic/history', {
-      params: { location, hours }
+      params: { limit: 20 }
     });
-    return response.data;
+    return response.data || { history: [], total: 0 };
   } catch (error) {
     console.error('Error fetching traffic history:', error);
-    return { history: [] };
+    return { history: [], total: 0 };
   }
 };
 
@@ -140,7 +163,11 @@ export const getTrafficHistory = async (location, hours = 24) => {
 export const getSettings = async () => {
   try {
     const response = await api.get('/api/v1/settings');
-    return response.data;
+    return response.data || {
+      refresh_interval: 30,
+      alerts_enabled: true,
+      cache_enabled: false
+    };
   } catch (error) {
     console.error('Error fetching settings:', error);
     return {
@@ -162,6 +189,17 @@ export const updateSettings = async (settings) => {
   }
 };
 
+// Save a search (history) entry
+export const saveSearch = async (payload) => {
+  try {
+    const response = await api.post('/api/v1/search_history', payload);
+    return response.data || { success: true };
+  } catch (error) {
+    console.error('Error saving search:', error);
+    return { success: false };
+  }
+};
+
 // Predict Traffic (Deprecated - use getTrafficStatus instead)
 // Kept for backward compatibility
 export const predictTraffic = async (location) => {
@@ -169,6 +207,9 @@ export const predictTraffic = async (location) => {
 };
 
 // Real-Time WebSocket API
+
+// Export the initialized socket function
+export { initializeSocket };
 
 /**
  * Subscribe to real-time traffic updates for a location
