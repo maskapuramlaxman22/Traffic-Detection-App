@@ -1,0 +1,328 @@
+/* Traffic Card Component Styles */
+
+.traffic-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-left: 5px solid #4CAF50;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  margin: 16px 0;
+  position: relative;
+}
+
+.traffic-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.traffic-card.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  min-height: 200px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+.traffic-card.loading .loader {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.traffic-card.loading p {
+  color: #666;
+  font-size: 16px;
+  margin: 0;
+}
+
+.traffic-card.error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  min-height: 150px;
+  background: #ffebee;
+  border-left-color: #f44336 !important;
+}
+
+.traffic-card.error .error-text {
+  color: #c62828;
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  text-align: center;
+}
+
+.retry-btn {
+  background: #f44336;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.retry-btn:hover {
+  background: #da190b;
+}
+
+/* Card Header */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.location-name {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  flex-grow: 1;
+}
+
+.traffic-status {
+  padding: 6px 12px;
+  border-radius: 20px;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* Card Body */
+.card-body {
+  padding: 20px;
+}
+
+/* Metrics Grid */
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.metric-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #999;
+  font-weight: 600;
+}
+
+.metric-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+}
+
+.metric-sublabel {
+  font-size: 12px;
+  color: #666;
+}
+
+.metric-sublabel.delay {
+  color: #f44336;
+  font-weight: 600;
+}
+
+/* Congestion Bar */
+.congestion-bar {
+  width: 100%;
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 4px 0;
+}
+
+.congestion-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+/* Weather Section */
+.weather-section {
+  background: #f5f5f5;
+  border-left: 4px solid #2196F3;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.section-title {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #666;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.weather-info {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.weather-condition {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.temperature {
+  font-size: 14px;
+  color: #999;
+}
+
+.impact-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: white;
+}
+
+.impact-badge.impact-none {
+  background: #4CAF50;
+}
+
+.impact-badge.impact-light {
+  background: #2196F3;
+}
+
+.impact-badge.impact-moderate {
+  background: #FFC107;
+  color: #333;
+}
+
+.impact-badge.impact-heavy {
+  background: #FF9800;
+}
+
+.impact-badge.impact-severe {
+  background: #F44336;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #999;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.data-source {
+  font-weight: 500;
+  color: #666;
+}
+
+.last-updated {
+  color: #999;
+}
+
+/* Refresh Button */
+.refresh-btn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: white;
+  border: 1px solid #ddd;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.refresh-btn:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: #999;
+}
+
+.refresh-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .traffic-status {
+    align-self: flex-start;
+  }
+
+  .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .refresh-btn {
+    position: static;
+    margin-top: 12px;
+    width: 100%;
+    padding: 10px;
+  }
+
+  .footer {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+/* Status-based border colors */
+.traffic-card[style*="border-left-color: rgb(76, 175, 80)"] {
+  border-left-color: #4CAF50 !important;
+}
+
+.traffic-card[style*="border-left-color: rgb(255, 193, 7)"] {
+  border-left-color: #FFC107 !important;
+}
+
+.traffic-card[style*="border-left-color: rgb(255, 152, 0)"] {
+  border-left-color: #FF9800 !important;
+}
+
+.traffic-card[style*="border-left-color: rgb(244, 67, 54)"] {
+  border-left-color: #F44336 !important;
+}
