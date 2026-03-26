@@ -35,7 +35,7 @@ export const getHistory = async () => {
     return response.data;
   } catch (error) {
     console.error('Error fetching history:', error);
-    return [];
+    return { total: 0, history: [] };
   }
 };
 

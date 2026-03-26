@@ -9,6 +9,7 @@ import { getSettings } from '../services/api';
 const Dashboard = () => {
   const [alertMessage, setAlertMessage] = useState('');
   const [settings, setSettings] = useState({ refresh_interval: 30, alerts_enabled: true });
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
   const refreshInterval = useRef(null);
 
   useEffect(() => {
@@ -30,7 +31,7 @@ const Dashboard = () => {
     
     if (data.refresh_interval > 0) {
       refreshInterval.current = setInterval(() => {
-        console.log('Auto-refreshing data...');
+        setRefreshTrigger(prev => prev + 1);
       }, data.refresh_interval * 1000);
     }
   };
@@ -41,16 +42,20 @@ const Dashboard = () => {
     }
   };
 
+  const handleSearchComplete = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
+
   return (
     <div className="container">
       <Alerts message={alertMessage} onClose={() => setAlertMessage('')} />
       
       <div className="grid-2">
-        <LocationSearch onSearch={() => {}} onAlert={showAlert} />
-        <RouteSearch onSearch={() => {}} onAlert={showAlert} />
+        <LocationSearch onSearch={handleSearchComplete} onAlert={showAlert} />
+        <RouteSearch onSearch={handleSearchComplete} onAlert={showAlert} />
       </div>
       
-      <History />
+      <History refreshTrigger={refreshTrigger} />
       <Settings />
     </div>
   );

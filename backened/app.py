@@ -298,6 +298,10 @@ def get_history():
     conn = sqlite3.connect('database/traffic.db')
     cursor = conn.cursor()
     
+    # Get total count
+    cursor.execute('SELECT COUNT(*) FROM history')
+    total_count = cursor.fetchone()[0]
+    
     cursor.execute('''
         SELECT type, location, source, destination, traffic_status, timestamp 
         FROM history 
@@ -317,7 +321,10 @@ def get_history():
         })
     
     conn.close()
-    return jsonify(history)
+    return jsonify({
+        "total": total_count,
+        "history": history
+    })
 
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():

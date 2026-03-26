@@ -22,17 +22,19 @@ ChartJS.register(
   Legend
 );
 
-const History = () => {
+const History = ({ refreshTrigger }) => {
   const [history, setHistory] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchHistory();
-  }, []);
+  }, [refreshTrigger]);
 
   const fetchHistory = async () => {
     const data = await getHistory();
-    setHistory(data);
+    setHistory(data.history || []);
+    setTotalCount(data.total || 0);
     setLoading(false);
   };
 
@@ -107,7 +109,7 @@ const History = () => {
             <p>🟢 Low Traffic: {trafficCounts['Low Traffic']}</p>
             <p>🟡 Moderate Traffic: {trafficCounts['Moderate Traffic']}</p>
             <p>🔴 High Traffic: {trafficCounts['High Traffic']}</p>
-            <p>📊 Total Searches: {history.length}</p>
+            <p>📊 Total Searches: {totalCount}</p>
           </div>
         </div>
         
