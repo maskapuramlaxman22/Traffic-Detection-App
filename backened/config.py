@@ -15,17 +15,35 @@ class Config:
     REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
     CACHE_TIMEOUT = int(os.getenv('CACHE_TIMEOUT', 300))  # 5 minutes
     
-    # API Keys for Traffic Data
-    TOMTOM_API_KEY = os.getenv('TOMTOM_API_KEY')
-    HERE_API_KEY = os.getenv('HERE_API_KEY')
-    GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')
-    MAPBOX_API_KEY = os.getenv('MAPBOX_API_KEY')
+    # ============================================================
+    # FREE APIS ONLY - NO API KEYS REQUIRED!
+    # ============================================================
     
-    # Geocoding APIs
+    # Geocoding: OpenStreetMap Nominatim (COMPLETELY FREE)
     NOMINATIM_USER_AGENT = os.getenv('NOMINATIM_USER_AGENT', 'traffic-detection-app')
     
-    # OpenWeatherMap for Weather Impact
-    OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY')
+    # Weather: Open-Meteo (COMPLETELY FREE, NO API KEY NEEDED!)
+    OPENWEATHER_API_KEY = os.getenv('OPENWEATHER_API_KEY', None)  # Optional, if you want OpenWeatherMap free tier
+    
+    # Routing: OSRM - Open Source Routing Machine (FREE, SELF-HOSTED AVAILABLE)
+    OSRM_URL = os.getenv('OSRM_URL', 'http://router.project-osrm.org')
+    
+    # Incidents: OpenStreetMap Overpass API (COMPLETELY FREE)
+    OVERPASS_API_URL = os.getenv('OVERPASS_API_URL', 'https://overpass-api.de/api/interpreter')
+    
+    # Maps Frontend: Leaflet with OpenStreetMap tiles (COMPLETELY FREE)
+    # Mapbox requires API key, but we use Leaflet instead
+    
+    # ============================================================
+    # NOTE: Paid API keys below are NOT USED in free tier
+    # They are kept for reference but not required
+    # ============================================================
+    
+    # API Keys (Optional - only if you want paid services)
+    TOMTOM_API_KEY = os.getenv('TOMTOM_API_KEY', None)  # Optional paid service
+    HERE_API_KEY = os.getenv('HERE_API_KEY', None)      # Optional paid service
+    GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY', None)  # Optional paid service
+    MAPBOX_API_KEY = os.getenv('MAPBOX_API_KEY', None)  # Optional paid service
     
     # API Rate Limiting
     RATE_LIMIT_REQUESTS = int(os.getenv('RATE_LIMIT_REQUESTS', 100))
@@ -37,9 +55,28 @@ class Config:
     
     # Audio Processing
     AUDIO_ENABLED = os.getenv('AUDIO_ENABLED', False)
-    AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY')
-    AWS_SECRET_KEY = os.getenv('AWS_SECRET_KEY')
-    AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')
+
+class DevelopmentConfig(Config):
+    """Development configuration"""
+    DEBUG = True
+    FLASK_ENV = 'development'
+
+class ProductionConfig(Config):
+    """Production configuration"""
+    DEBUG = False
+    FLASK_ENV = 'production'
+
+class TestingConfig(Config):
+    """Testing configuration"""
+    TESTING = True
+    DATABASE_URL = 'sqlite:///:memory:'
+
+config = {
+    'development': DevelopmentConfig,
+    'production': ProductionConfig,
+    'testing': TestingConfig,
+    'default': DevelopmentConfig
+}
 
 class DevelopmentConfig(Config):
     """Development configuration"""

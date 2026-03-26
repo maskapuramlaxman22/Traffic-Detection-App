@@ -12,7 +12,7 @@ load_dotenv()
 # Import custom services
 from config import config
 from database.models import setup_database, DatabaseManager
-from services.traffic_service import TrafficDataAggregator
+from services.free_traffic_service import FreeTrafficDataAggregator  # Use FREE APIs
 from services.cache_service import CacheService
 
 # Configure logging
@@ -37,14 +37,17 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 db = DatabaseManager()
 cache = CacheService(app.config.get('REDIS_URL', 'redis://localhost:6379/0'))
 
-# Initialize traffic data aggregator
-traffic_config = {
-    'TOMTOM_API_KEY': app.config.get('TOMTOM_API_KEY'),
-    'HERE_API_KEY': app.config.get('HERE_API_KEY'),
-    'GOOGLE_MAPS_API_KEY': app.config.get('GOOGLE_MAPS_API_KEY'),
-    'OPENWEATHER_API_KEY': app.config.get('OPENWEATHER_API_KEY')
-}
-traffic_aggregator = TrafficDataAggregator(traffic_config)
+# Initialize FREE traffic data aggregator (No API keys needed!)
+traffic_aggregator = FreeTrafficDataAggregator()
+
+logger.info("=" * 60)
+logger.info("🎉 Using 100% FREE APIs - No Costs!")
+logger.info("=" * 60)
+logger.info("Geocoding: OpenStreetMap (Nominatim) - FREE")
+logger.info("Routing: OSRM (Open Source) - FREE")
+logger.info("Weather: Open-Meteo - FREE (No API Key!)")
+logger.info("Incidents: OpenStreetMap Overpass - FREE")
+logger.info("=" * 60)
 
 # Application initialization
 def init_app():

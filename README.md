@@ -1,6 +1,28 @@
 # 🚗 Real-Time Traffic Detection System
 
-A production-ready web application for real-time traffic monitoring and analysis using actual traffic APIs and real sensor data.
+A **production-ready web application for real-time traffic monitoring and analysis** using **100% FREE APIs - No costs!**
+
+## 🎉 FREE Version Features
+
+This application is **completely FREE** to run:
+- ✅ **$0 monthly costs**
+- ✅ **No API keys required**
+- ✅ **Open-source & community-driven**
+- ✅ **Full routing functionality**
+- ✅ **Real-time location search**
+- ✅ **Weather integration**
+- ✅ **Interactive maps**
+
+### 📊 What You Get
+
+**Backend APIs:**
+- **Routing**: OSRM (Open Source Routing Machine) - FREE
+- **Geocoding**: OpenStreetMap/Nominatim - FREE
+- **Weather**: Open-Meteo - FREE (NO API KEY!)
+- **Incidents**: OpenStreetMap Overpass - FREE
+- **Maps**: Leaflet + OpenStreetMap - FREE
+
+See [FREE_APIS_GUIDE.md](FREE_APIS_GUIDE.md) for complete details.
 
 ## 📋 Overview
 
