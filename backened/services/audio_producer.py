@@ -4,7 +4,15 @@ Part of the Producer-Consumer architecture for traffic detection
 Supports both real and synthetic audio for zero-dependency operation
 """
 
-import pyaudio
+try:
+    import pyaudio
+    PYAUDIO_AVAILABLE = True
+except (ImportError, Exception):
+    PYAUDIO_AVAILABLE = False
+    class FakePyAudio:
+        paFloat32 = 0x00000001 # Standard value
+    pyaudio = FakePyAudio()
+
 import numpy as np
 import queue
 import threading
@@ -63,8 +71,12 @@ class AudioProducer(threading.Thread):
         self.chunk_id = 0
         
     def from_microphone(self):
-        """Capture audio from microphone"""
+        """Capture audio from microphone with fallback"""
         logger.info(f"[PRODUCER] Initializing microphone (sample_rate={self.sample_rate}Hz)")
+        
+        if not PYAUDIO_AVAILABLE:
+            logger.warning("[PRODUCER] PyAudio not installed/available. Skipping microphone mode.")
+            return
         
         try:
             p = pyaudio.PyAudio()

@@ -318,7 +318,17 @@ def register_api_routes(app, db, cache, traffic_aggregator, ml_model, queue_mana
             
         except Exception as e:
             logger.error(f"Get history error: {e}")
-            return jsonify({"error": "Failed to get history"}), 500
+    @app.route('/api/v1/history', methods=['DELETE'])
+    def clear_history():
+        """Clear all search/traffic history"""
+        try:
+            # Drop and recreate search history table or just delete all rows
+            db.clear_search_history()
+            logger.info("✓ Search history cleared by user")
+            return jsonify({"status": "cleared"}), 200
+        except Exception as e:
+            logger.error(f"Clear history error: {e}")
+            return jsonify({"error": "Failed to clear history"}), 500
     
     # ================== SAVE SEARCH ==================
     

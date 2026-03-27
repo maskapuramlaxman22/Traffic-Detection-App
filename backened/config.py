@@ -77,25 +77,3 @@ config = {
     'testing': TestingConfig,
     'default': DevelopmentConfig
 }
-
-class DevelopmentConfig(Config):
-    """Development configuration"""
-    DEBUG = True
-    FLASK_ENV = 'development'
-
-class ProductionConfig(Config):
-    """Production configuration"""
-    DEBUG = False
-    FLASK_ENV = 'production'
-
-class TestingConfig(Config):
-    """Testing configuration"""
-    TESTING = True
-    DATABASE_URL = 'sqlite:///:memory:'
-
-config = {
-    'development': DevelopmentConfig,
-    'production': ProductionConfig,
-    'testing': TestingConfig,
-    'default': DevelopmentConfig
-}

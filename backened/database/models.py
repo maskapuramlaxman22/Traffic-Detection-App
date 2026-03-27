@@ -361,3 +361,16 @@ class DatabaseManager:
             return []
         finally:
             conn.close()
+    def clear_search_history(self) -> bool:
+        """Clear all search history from database"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        try:
+            cursor.execute('DELETE FROM search_history')
+            conn.commit()
+            return True
+        except Exception as e:
+            print(f"Error clearing history: {e}")
+            return False
+        finally:
+            conn.close()

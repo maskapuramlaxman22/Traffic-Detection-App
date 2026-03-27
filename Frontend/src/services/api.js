@@ -150,12 +150,23 @@ export const getIncidents = async (lat, lng, radiusKm = 5) => {
 export const getTrafficHistory = async (location, hours = 24) => {
   try {
     const response = await api.get('/api/v1/traffic/history', {
-      params: { limit: 20 }
+      params: { limit: 100 }
     });
     return response.data || { history: [], total: 0 };
   } catch (error) {
     console.error('Error fetching traffic history:', error);
     return { history: [], total: 0 };
+  }
+};
+
+// Clear all history
+export const clearHistory = async () => {
+  try {
+    const response = await api.delete('/api/v1/history');
+    return response.data;
+  } catch (error) {
+    console.error('Error clearing history:', error);
+    return { error: 'Failed' };
   }
 };
 

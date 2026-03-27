@@ -64,8 +64,10 @@ class FreeRoutingService:
     Provides: routing, directions, distance matrix
     """
     
-    def __init__(self):
+    def __init__(self, geocoder=None):
         self.base_url = "http://router.project-osrm.org/route/v1/driving"
+        from geopy.geocoders import Nominatim
+        self.geocoder = geocoder or Nominatim(user_agent="traffic-detection-app-v2")
     
     def get_route(self, origin_lat: float, origin_lng: float, 
                   dest_lat: float, dest_lng: float) -> Optional[Dict]:
@@ -108,8 +110,23 @@ class FreeRoutingService:
                     if i % max(1, len(steps) // 4) == 0:
                         step = steps[i]
                         location = step.get('maneuver', {}).get('location', [0, 0])
+                        # Attempt to get a real city name for the waypoint
+                        node_name = step.get('name')
+                        if not node_name or node_name.strip() == "":
+                             # Fallback reverse geocode for a real city name
+                             try:
+                                 loc_name = self.geocoder.reverse((location[1], location[0]), timeout=2)
+                                 if loc_name:
+                                     # Get the city/town part of the address
+                                     parts = loc_name.address.split(',')
+                                     node_name = parts[0] if len(parts) > 0 else "Waypoint"
+                                 else:
+                                      node_name = f"Checkpoint {i}"
+                             except:
+                                 node_name = f"Checkpoint {i}"
+
                         nodes.append({
-                            "name": step.get('name') or f"Waypoint {len(nodes)}",
+                            "name": node_name,
                             "latitude": location[1],
                             "longitude": location[0],
                             "instruction": step.get('maneuver', {}).get('instruction', '')
@@ -118,8 +135,8 @@ class FreeRoutingService:
                 # The aggregator will add the destination
                 
                 return {
-                    "distance_km": distance_meters / 1000,
-                    "duration_minutes": duration_seconds / 60,
+                    "distance_km": route.get('distance', 0) / 1000,
+                    "duration_minutes": route.get('duration', 0) / 60,
                     "route_geometry": route.get('geometry'),
                     "nodes": nodes,
                     "steps": steps,

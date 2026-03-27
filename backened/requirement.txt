@@ -29,9 +29,11 @@ python-dotenv==1.0.0
 # Utilities
 pydantic==2.0.3
 python-dateutil==2.8.2
+gunicorn==21.2.0
+eventlet==0.33.3
 
 # Audio Processing (NEW - For Producer-Consumer Audio ML)
-pyaudio==0.2.13
+# pyaudio==0.2.13 (Disabled for Render - needs portaudio)
 librosa==0.10.0
 soundfile==0.12.1
 scipy==1.11.0

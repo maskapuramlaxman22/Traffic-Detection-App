@@ -1,205 +1,134 @@
 import React, { useState, useEffect } from 'react';
-import { getTrafficHistory } from '../services/api';
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-} from 'chart.js';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
+import { getTrafficHistory, clearHistory } from '../services/api';
 
 const History = ({ refreshTrigger }) => {
   const [history, setHistory] = useState([]);
-  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [showAll, setShowAll] = useState(false);
+  const [showAllLoc, setShowAllLoc] = useState(false);
+  const [showAllRoute, setShowAllRoute] = useState(false);
 
   useEffect(() => {
     fetchHistory();
   }, [refreshTrigger]);
 
   const fetchHistory = async () => {
-    const data = await getTrafficHistory(undefined, 24);
+    const data = await getTrafficHistory(undefined, 100);
     setHistory(data.history || []);
-    setTotalCount(data.total || data.count || (data.history || []).length);
     setLoading(false);
   };
 
-  const getTrafficCount = () => {
-    const counts = { 'Low Traffic': 0, 'Moderate Traffic': 0, 'High Traffic': 0 };
-    history.forEach(item => {
-      if (item.traffic_status in counts) {
-        counts[item.traffic_status]++;
-      }
+  const locationHistory = history.filter(item => item.type === 'location' || item.type === 'single' || item.location);
+  const routeHistory = history.filter(item => item.type === 'route' || item.source);
+
+  const getStats = (list) => {
+    const counts = { low: 0, moderate: 0, high: 0 };
+    list.forEach(item => {
+      const status = (item.traffic_status || '').toLowerCase();
+      if (status.includes('low')) counts.low++;
+      else if (status.includes('high') || status.includes('heavy')) counts.high++;
+      else counts.moderate++;
     });
     return counts;
   };
 
-  // Display only last 5 by default, or all if "View All" is clicked
-  const displayedHistory = showAll ? history : history.slice(0, 5);
-  const itemsToShow = showAll ? 15 : 5;
+  const locStats = getStats(locationHistory);
+  const routeStats = getStats(routeHistory);
 
-  const chartData = {
-    labels: history.slice(0, 10).reverse().map(item => 
-      new Date(item.timestamp).toLocaleDateString()
-    ),
-    datasets: [
-      {
-        label: 'Traffic Status',
-        data: history.slice(0, 10).reverse().map(item => {
-          const status = item.traffic_status;
-          if (status === 'Low Traffic') return 1;
-          if (status === 'Moderate Traffic') return 2;
-          if (status === 'High Traffic') return 3;
-          return 0;
-        }),
-        borderColor: 'rgb(75, 192, 192)',
-        backgroundColor: 'rgba(75, 192, 192, 0.5)',
-        tension: 0.1
-      }
-    ]
-  };
+  if (loading) return <div style={{ padding: '20px', textAlign: 'center' }}>⏳ Loading History...</div>;
 
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top',
-      },
-      title: {
-        display: true,
-        text: 'Recent Traffic Trends'
-      }
-    },
-    scales: {
-      y: {
-        ticks: {
-          callback: function(value) {
-            if (value === 1) return 'Low';
-            if (value === 2) return 'Moderate';
-            if (value === 3) return 'High';
-            return '';
-          }
-        }
-      }
+  const Table = ({ data, isRoute, showAll, onToggle }) => (
+    <div style={{ marginTop: '20px', border: '1px solid #eee', borderRadius: '8px', padding: '15px', background: '#fff' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+        <h4 style={{ margin: 0 }}>{isRoute ? '🗺️ Recent Route Searches' : '📍 Recent Location Searches'}</h4>
+        {data.length > 5 && (
+          <button onClick={onToggle} style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', fontWeight: 600 }}>
+            {showAll ? 'Show Less' : `View All (${data.length})`}
+          </button>
+        )}
+      </div>
+
+      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9em' }}>
+        <thead>
+          <tr style={{ background: '#f8f9fa', borderBottom: '2px solid #eee' }}>
+            <th style={{ padding: '10px', textAlign: 'left' }}>{isRoute ? 'Route' : 'Location'}</th>
+            <th style={{ padding: '10px', textAlign: 'left' }}>Status</th>
+            <th style={{ padding: '10px', textAlign: 'left' }}>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.length > 0 ? (
+            (showAll ? data : data.slice(0, 5)).map((item, idx) => (
+              <tr key={idx} style={{ borderBottom: '1px solid #f2f2f2' }}>
+                <td style={{ padding: '10px' }}>
+                   {isRoute ? `${item.source || '-'} → ${item.destination || '-'}` : (item.location || item.query || '-')}
+                </td>
+                <td style={{ padding: '10px' }}>
+                  <span style={{ 
+                    padding: '2px 8px', borderRadius: '10px', fontSize: '0.8em', fontWeight: 600,
+                    background: (item.traffic_status || '').toLowerCase().includes('high') ? '#ffebee' : (item.traffic_status || '').toLowerCase().includes('low') ? '#e8f5e9' : '#fff3e0',
+                    color: (item.traffic_status || '').toLowerCase().includes('high') ? '#c62828' : (item.traffic_status || '').toLowerCase().includes('low') ? '#2e7d32' : '#ef6c00'
+                  }}>
+                    {item.traffic_status || 'Moderate'}
+                  </span>
+                </td>
+                <td style={{ padding: '10px', color: '#888' }}>
+                  {new Date(item.timestamp).toLocaleDateString()}
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr><td colSpan="3" style={{ padding: '20px', textAlign: 'center', color: '#999' }}>No history yet.</td></tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+
+  const handleClearHistory = async () => {
+    if (window.confirm('Are you sure you want to clear ALL search history? This cannot be undone.')) {
+      await clearHistory();
+      setHistory([]);
     }
   };
 
-  if (loading) return <div>Loading history...</div>;
-
-  const trafficCounts = getTrafficCount();
-
   return (
-    <div className="card">
-      <h3 className="card-title">📊 Search History</h3>
-      
-      <div className="grid-2">
-        <div>
-          <h4>Statistics</h4>
-          <div style={{ marginTop: '10px' }}>
-            <p>🟢 Low Traffic: {trafficCounts['Low Traffic']}</p>
-            <p>🟡 Moderate Traffic: {trafficCounts['Moderate Traffic']}</p>
-            <p>🔴 High Traffic: {trafficCounts['High Traffic']}</p>
-            <p>📊 Total Searches: {totalCount}</p>
-          </div>
-        </div>
-        
-        <div>
-          <Line data={chartData} options={chartOptions} />
-        </div>
+    <div className="card" style={{ background: '#fcfcfc' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+        <h3 className="card-title" style={{ margin: 0 }}>📊 Search Statistics & History</h3>
+        {history.length > 0 && (
+          <button 
+            onClick={handleClearHistory}
+            style={{ padding: '8px 15px', background: '#dc3545', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '0.85em' }}
+          >
+            🗑️ Clear History
+          </button>
+        )}
       </div>
       
-      <div style={{ marginTop: '30px', overflowX: 'auto' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-          <h4 style={{ margin: 0 }}>Recent Searches ({displayedHistory.length} of {totalCount})</h4>
-          {!showAll && history.length > 5 && (
-            <button
-              onClick={() => setShowAll(true)}
-              style={{
-                background: '#007bff',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                padding: '8px 16px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}
-            >
-              View All ({totalCount})
-            </button>
-          )}
-          {showAll && (
-            <button
-              onClick={() => setShowAll(false)}
-              style={{
-                background: '#6c757d',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '4px',
-                padding: '8px 16px',
-                cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: '500'
-              }}
-            >
-              Show Less
-            </button>
-          )}
+      <div className="grid-2">
+        {/* Location Stats */}
+        <div style={{ padding: '15px', background: '#fff', borderRadius: '8px', border: '1px solid #f0f0f0' }}>
+          <h4 style={{ marginBottom: '12px' }}>📍 Location Totals</h4>
+          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.9em' }}>🟢 Low: <strong>{locStats.low}</strong></span>
+            <span style={{ fontSize: '0.9em' }}>🟡 Mod: <strong>{locStats.moderate}</strong></span>
+            <span style={{ fontSize: '0.9em' }}>🔴 High: <strong>{locStats.high}</strong></span>
+            <span style={{ fontSize: '0.9em', marginLeft: 'auto' }}>Total: <strong>{locationHistory.length}</strong></span>
+          </div>
+          <Table data={locationHistory} isRoute={false} showAll={showAllLoc} onToggle={() => setShowAllLoc(!showAllLoc)} />
         </div>
 
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ background: '#f5f5f5' }}>
-              <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>Type</th>
-              <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>Location</th>
-              <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>Status</th>
-              <th style={{ padding: '12px', border: '1px solid #ddd', textAlign: 'left' }}>Time</th>
-            </tr>
-          </thead>
-          <tbody>
-            {displayedHistory.length > 0 ? (
-              displayedHistory.map((item, idx) => (
-                <tr key={idx}>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                    {item.type === 'single' ? '📍 Single' : '🗺️ Route'}
-                  </td>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                    {item.location || `${item.source} → ${item.destination}`}
-                  </td>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>
-                    <span className={`traffic-${(item.traffic_status || 'moderate').toLowerCase().split(' ')[0]}`}>
-                      {item.traffic_status || 'Moderate Traffic'}
-                    </span>
-                  </td>
-                  <td style={{ padding: '10px', border: '1px solid #ddd', fontSize: '0.9em', color: '#666' }}>
-                    {new Date(item.timestamp).toLocaleString()}
-                  </td>
-                </tr>
-              ))
-            ) : (
-              <tr>
-                <td colSpan="4" style={{ padding: '20px', textAlign: 'center', color: '#999' }}>
-                  No search history yet. Start by searching for a location or route!
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+        {/* Route Stats */}
+        <div style={{ padding: '15px', background: '#fff', borderRadius: '8px', border: '1px solid #f0f0f0' }}>
+          <h4 style={{ marginBottom: '12px' }}>🗺️ Route Totals</h4>
+          <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.9em' }}>🟢 Low: <strong>{routeStats.low}</strong></span>
+            <span style={{ fontSize: '0.9em' }}>🟡 Mod: <strong>{routeStats.moderate}</strong></span>
+            <span style={{ fontSize: '0.9em' }}>🔴 High: <strong>{routeStats.high}</strong></span>
+            <span style={{ fontSize: '0.9em', marginLeft: 'auto' }}>Total: <strong>{routeHistory.length}</strong></span>
+          </div>
+          <Table data={routeHistory} isRoute={true} showAll={showAllRoute} onToggle={() => setShowAllRoute(!showAllRoute)} />
+        </div>
       </div>
     </div>
   );

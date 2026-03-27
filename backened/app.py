@@ -235,10 +235,13 @@ atexit.register(shutdown)
 
 # ===== ENTRY POINT =====
 
+# ===== INITIALIZE ON IMPORT =====
+# This ensures routes and services are ready when running with Gunicorn
+init_app()
+
+# ===== ENTRY POINT =====
+
 if __name__ == '__main__':
-    # Initialize app
-    init_app()
-    
     # Run server
     port = int(os.getenv('PORT', 5000))
     debug = os.getenv('FLASK_ENV') == 'development'

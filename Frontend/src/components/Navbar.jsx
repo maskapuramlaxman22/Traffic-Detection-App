@@ -14,7 +14,7 @@ const Navbar = () => {
             <Link to="/" className="nav-link">Home</Link>
           </li>
           <li className="nav-item">
-            <Link to="/dashboard" className="nav-link">Dashboard</Link>
+            <Link to="/dashboard" onClick={() => (window.location.href = '/dashboard')} className="nav-link">Dashboard</Link>
           </li>
           <li className="nav-item">
             <Link to="/about" className="nav-link">About</Link>
