@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: traffic-backend
+    env: docker
+    branch: main
+    plan: starter
+    buildCommand: ''
+    startCommand: ''
+    envVars:
+      - key: FLASK_ENV
+        value: production
+  - type: worker
+    name: traffic-audio-worker
+    env: docker
+    branch: main
+    plan: starter
+    buildCommand: ''
+    startCommand: python backened/services/audio_worker_runner.py
+    envVars: []
